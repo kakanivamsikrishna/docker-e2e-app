@@ -4,8 +4,7 @@ services:
     image: appimage
     ports:
       - "1111:8080"
-    deploy:
-      depends_on:
+  depends_on:
         - devopsdb
 
   devopsdb:
