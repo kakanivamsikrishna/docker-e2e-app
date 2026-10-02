@@ -1,26 +1,27 @@
-version: "3.9"
-
+---
 services:
-  devopsdb:
-    image: shaikmustafa/deepika:db
-    ports:
-      - "3306:3306"
-    deploy:
-      replicas: 1
-    networks:
-      - mynetwork
-
-  application:
-    image: shaikmustafa/deepika:app
+  appservice:
+    image: appimage
     ports:
       - "1111:8080"
     deploy:
-      replicas: 3
-    depends_on:
-      - devopsdb
-    networks:
-      - mynetwork
+      depends_on:
+        - devopsdb
 
-networks:
-  mynetwork:
-    driver: overlay
+  devopsdb:
+    image: dbimage
+    ports:
+      - "3306:3306"
+    volumes:
+      - userdata:/var/lib/mysql
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: 500M
+        limits:
+          cpus: "1.0"
+          memory: 1000M
+
+volumes:
+  userdata:
