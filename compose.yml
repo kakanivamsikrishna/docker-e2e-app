@@ -6,6 +6,10 @@ services:
       - "1111:8080"
     depends_on:
       - devopsdb
+    deploy:
+      replicas: 3
+    networks:
+      - mynetwork
 
   devopsdb:
     image: dbimage
@@ -14,13 +18,13 @@ services:
     volumes:
       - userdata:/var/lib/mysql
     deploy:
-      resources:
-        reservations:
-          cpus: "0.5"
-          memory: 500M
-        limits:
-          cpus: "1.0"
-          memory: 1000M
+      replicas: 1
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: overlay
 
 volumes:
   userdata:
