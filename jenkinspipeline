@@ -1,0 +1,72 @@
+pipeline {
+    agent {
+        node {
+            label "prod"
+        }
+    }
+    tools {
+        maven "mymaven"
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/kakanivamsikrishna/docker-e2e-app.git'
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh "mvn clean install"
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=myproject"
+                }
+            }
+        }
+        stage ("Quality gate") {
+            steps {
+                waitForQualityGate abortPipeline: true, credentialsId: 'sonar'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                script {
+                    def pom = readMavenPom file: 'pom.xml'
+                    nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '3.129.9.66:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: pom.version
+                }
+            }
+        }
+        stage ("Image creation") {
+            steps {
+                sh "cp -r target Docker-app"
+                sh "docker build -t appimage Docker-app"
+                sh "docker build -t dbimage Docker-db"
+            }
+        }
+        stage ("Trivy-scan") {
+            steps {
+                sh "trivy image appimage >> appimage-report.txt"
+                sh "trivy image dbimage >> dbimage-report.txt"
+            }
+        }
+        stage ("Registry-dockerhub") {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-hub') {
+                        sh "docker tag appimage vamsikrishnakakani/dockerwebapp:javaapp"
+                        sh "docker tag dbimage vamsikrishnakakani/dockerwebapp:db"
+                        sh "docker push vamsikrishnakakani/dockerwebapp:javaapp"
+                        sh "docker push vamsikrishnakakani/dockerwebapp:db"
+                    }
+                }
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh "docker stack deploy myapp --compose-file=compose.yml"
+            }
+        }
+    }
+}
