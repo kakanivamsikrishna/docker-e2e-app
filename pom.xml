@@ -4,7 +4,7 @@
     <groupId>com.visualpathit</groupId>
     <artifactId>vprofile</artifactId>
     <packaging>war</packaging>
-    <version>v3</version>
+    <version>v2</version>
     <name>Devops Webapp</name>
     <url>http://maven.apache.org</url>
     <properties>
