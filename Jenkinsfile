@@ -27,7 +27,7 @@ pipeline {
                 }
             }
         }
-        stage ("Quality-Gates") {
+        stage ("Quality check") {
             steps {
                 waitForQualityGate abortPipeline: true, credentialsId: 'sonar'
             }
@@ -36,36 +36,34 @@ pipeline {
             steps {
                 script {
                     def pom = readMavenPom file: 'pom.xml'
-                    nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '18.191.152.141:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: pom.version
+                    nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '77.113.39.139:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: pom.version
                 }
             }
         }
-        stage ("Image-Creation") {
+        stage ("Image creation") {
             steps {
                 sh "cp -r target Docker-app"
-                sh "docker build -t appimage Docker-app"
-                sh "docker build -t dbimage Docker-db"
+                sh "docker build -t vamsikrishnakakani/test-repo:javaimage Docker-app"
+                sh "docker build -t vamsikrishnakakani/test-repo:dbimage Docker-db"
             }
         }
-        stage ("Trivy-scan") {
+        stage ("Trivy scan") {
             steps {
-                sh "trivy image appimage >> appimage-report.txt"
-                sh "trivy image dbimage >> dbimage-report.txt"
+                sh "trivy image vamsikrishnakakani/test-repo:javaimage >> javareport.txt"
+                sh "trivy image vamsikrishnakakani/test-repo:dbimage >> dbreport.txt"
             }
         }
-        stage ("Registry-dockerhub") {
+        stage ("Dockerhub Registry") {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'docker-hub') {
-                        sh "docker tag appimage vamsikrishnakakani/test-repo:javaapp"
-                        sh "docker tag dbimage vamsikrishnakakani/test-repo:db"
-                        sh "docker push vamsikrishnakakani/test-repo:javaapp"
-                        sh "docker push vamsikrishnakakani/test-repo:db"
+                    withDockerRegistry(credentialsId: 'dockerhub') {
+                        sh "docker push vamsikrishnakakani/test-repo:javaimage"
+                        sh "docker push vamsikrishnakakani/test-repo:dbimage"
                     }
                 }
             }
         }
-        stage (Deploy) {
+        stage ("Deploy") {
             steps {
                 sh "docker stack deploy myapp --compose-file=compose.yml"
             }
