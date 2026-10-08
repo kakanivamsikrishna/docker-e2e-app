@@ -1,4 +1,4 @@
-// pipeline written by vamsi krishna kakani on oct:06/2026
+// pipeline written by Vamsi Krishna Kakani on oct:08/2026
 
 pipeline {
     agent {
@@ -27,7 +27,7 @@ pipeline {
                 }
             }
         }
-        stage ("Quality check") {
+        stage ("Qulaity check") {
             steps {
                 waitForQualityGate abortPipeline: true, credentialsId: 'sonar'
             }
@@ -36,27 +36,27 @@ pipeline {
             steps {
                 script {
                     def pom = readMavenPom file: 'pom.xml'
-                    nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '77.113.39.139:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: pom.version
+                    nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: "target/${pom.artifactId}-${pom.version}.war", type: 'war']], credentialsId: 'nexus', groupId: pom.groupId, nexusUrl: '18.191.109.75:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: pom.version
                 }
             }
         }
-        stage ("Image creation") {
+        stage ("Image-Creation") {
             steps {
                 sh "cp -r target Docker-app"
                 sh "docker build -t vamsikrishnakakani/test-repo:javaimage Docker-app"
                 sh "docker build -t vamsikrishnakakani/test-repo:dbimage Docker-db"
             }
         }
-        stage ("Trivy scan") {
+        stage ("Trivy-scan") {
             steps {
                 sh "trivy image vamsikrishnakakani/test-repo:javaimage >> javareport.txt"
                 sh "trivy image vamsikrishnakakani/test-repo:dbimage >> dbreport.txt"
             }
         }
-        stage ("Dockerhub Registry") {
+        stage ("Registry") {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'dockerhub') {
+                    withDockerRegistry(credentialsId: 'docker-hub') {
                         sh "docker push vamsikrishnakakani/test-repo:javaimage"
                         sh "docker push vamsikrishnakakani/test-repo:dbimage"
                     }
