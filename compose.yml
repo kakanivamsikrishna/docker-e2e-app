@@ -1,7 +1,7 @@
 ---
 services:
   appservice:
-    image: vamsikrishnakakani/dockerwebapp:javaimage
+    image: vamsikrishnakakani/test-repo:javaimage
     ports:
       - "1111:8080"
     depends_on:
@@ -12,7 +12,7 @@ services:
       - mynetwork
 
   devopsdb:
-    image: vamsikrishnakakani/dockerwebapp:dbimage
+    image: vamsikrishnakakani/test-repo:dbimage
     ports:
       - "3306:3306"
     volumes:
